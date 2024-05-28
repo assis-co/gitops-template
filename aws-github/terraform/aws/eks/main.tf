@@ -184,16 +184,16 @@ module "vpc" {
   tags = local.tags
 }
 
+
 module "vpc_cni_irsa" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  version = "5.32.0"
+  version = "5.39.1"
 
   role_name             = upper("VPC-CNI-IRSA-<CLUSTER_NAME>")
   attach_vpc_cni_policy = true
   role_policy_arns = {
     AmazonEKS_CNI_Policy = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
   }
-
 
   oidc_providers = {
     main = {
@@ -207,7 +207,7 @@ module "vpc_cni_irsa" {
 
 module "aws_ebs_csi_driver" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  version = "5.32.0"
+  version = "5.39.1"
 
   role_name = upper("EBS-CSI-DRIVER-<CLUSTER_NAME>")
 
@@ -371,8 +371,8 @@ module "karpenter" {
   source  = "terraform-aws-modules/eks/aws//modules/karpenter"
   version = "~> 20.0"
 
-  cluster_name = module.eks.cluster_name
-
+  cluster_name  = module.eks.cluster_name
+  iam_role_name = "karpenter-${local.name}"
   # Attach additional IAM policies to the Karpenter node IAM role
   node_iam_role_additional_policies = {
     AmazonSSMManagedInstanceCore = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
@@ -383,7 +383,7 @@ module "karpenter" {
 
 module "argo_workflows" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  version = "5.32.0"
+  version = "5.39.1"
 
   role_name = "argo-${local.name}"
   role_policy_arns = {
@@ -402,7 +402,7 @@ module "argo_workflows" {
 
 module "argocd" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  version = "5.32.0"
+  version = "5.39.1"
 
   role_name = "argocd-${local.name}"
   role_policy_arns = {
@@ -422,7 +422,7 @@ module "argocd" {
 
 module "atlantis" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  version = "5.32.0"
+  version = "5.39.1"
 
   role_name = "atlantis-${local.name}"
   role_policy_arns = {
@@ -440,7 +440,7 @@ module "atlantis" {
 
 module "cert_manager" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  version = "5.32.0"
+  version = "5.39.1"
 
   role_name = "cert-manager-${local.name}"
   role_policy_arns = {
@@ -490,7 +490,7 @@ EOT
 
 module "chartmuseum" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  version = "5.32.0"
+  version = "5.39.1"
 
   role_name = "chartmuseum-${local.name}"
   role_policy_arns = {
@@ -508,7 +508,7 @@ module "chartmuseum" {
 
 module "crossplane_custom_trust" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-assumable-role"
-  version = "5.33.0"
+  version = "5.39.1"
 
   create_role = true
 
@@ -563,7 +563,7 @@ data "aws_iam_policy_document" "crossplane_custom_trust_policy" {
 
 module "ecr_publish_permissions_sync" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  version = "5.32.0"
+  version = "5.39.1"
 
   role_name = "ecr-publish-permissions-sync-${local.name}"
   role_policy_arns = {
@@ -582,7 +582,7 @@ module "ecr_publish_permissions_sync" {
 
 module "external_dns" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  version = "5.32.0"
+  version = "5.39.1"
 
   role_name = "external-dns-${local.name}"
   role_policy_arns = {
@@ -633,7 +633,7 @@ EOT
 
 module "kubefirst_api" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  version = "5.32.0"
+  version = "5.39.1"
 
   role_name = "kubefirst-api-${local.name}"
   role_policy_arns = {
@@ -653,7 +653,7 @@ module "kubefirst_api" {
 
 module "vault" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  version = "5.32.0"
+  version = "5.39.1"
 
   role_name = "vault-${local.name}"
   role_policy_arns = {
