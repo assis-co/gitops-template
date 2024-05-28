@@ -19,7 +19,7 @@ data "aws_availability_zones" "available" {}
 
 locals {
   name            = "<CLUSTER_NAME>"
-  cluster_version = "1.26"
+  cluster_version = "1.30"
   region          = "<CLOUD_REGION>"
 
   vpc_cidr = "10.0.0.0/16"
@@ -36,7 +36,7 @@ locals {
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "19.10.0"
+  version = "20.2.12"
 
   cluster_name                   = local.name
   cluster_version                = local.cluster_version
@@ -45,10 +45,10 @@ module "eks" {
   cluster_encryption_config      = {}
   cluster_addons = {
     # AWS launch CoreDNS itself with their add-on https://docs.aws.amazon.com/eks/latest/userguide/managing-coredns.html
-    # coredns = {
-    #   most_recent = true
-    #   resolve_conflicts = "OVERWRITE"
-    # }
+    coredns = {
+      most_recent       = true
+      resolve_conflicts = "OVERWRITE"
+    }
     aws-ebs-csi-driver = {
       most_recent              = true
       service_account_role_arn = module.aws_ebs_csi_driver.iam_role_arn
@@ -68,62 +68,83 @@ module "eks" {
         }
       })
     }
+    eks-pod-identity-agent = {
+      most_recent = true
+    }
   }
 
   vpc_id                   = module.vpc.vpc_id
   subnet_ids               = module.vpc.private_subnets
   control_plane_subnet_ids = module.vpc.intra_subnets
 
-  manage_aws_auth_configmap = true
-
-  aws_auth_roles = [
-    # managed node group is automatically added to the configmap
-    {
-      rolearn  = "arn:aws:iam::<AWS_ACCOUNT_ID>:role/KubernetesAdmin"
-      username = "arn:aws:iam::<AWS_ACCOUNT_ID>:role/KubernetesAdmin"
-      groups   = ["system:masters"]
-    },
-    {
-      rolearn  = "arn:aws:iam::<AWS_ACCOUNT_ID>:role/argocd-<CLUSTER_NAME>"
-      username = "arn:aws:iam::<AWS_ACCOUNT_ID>:role/argocd-<CLUSTER_NAME>"
-      groups   = ["system:masters"]
-    },
-    {
-      rolearn  = "arn:aws:iam::<AWS_ACCOUNT_ID>:role/atlantis-<CLUSTER_NAME>"
-      username = "arn:aws:iam::<AWS_ACCOUNT_ID>:role/atlantis-<CLUSTER_NAME>"
-      groups   = ["system:masters"]
-    },
-  ]
-
-
-  eks_managed_node_group_defaults = {
-    ami_type       = "AL2_x86_64"
-    instance_types = ["<NODE_TYPE>"]
-
-    # We are using the IRSA created below for permissions
-    # However, we have to deploy with the policy attached FIRST (when creating a fresh cluster)
-    # and then turn this off after the cluster/node group is created. Without this initial policy,
-    # the VPC CNI fails to assign IPs and nodes cannot join the cluster
-    # See https://github.com/aws/containers-roadmap/issues/1666 for more context
-    iam_role_attach_cni_policy = true
-  }
-
   eks_managed_node_groups = {
     # Default node group - as provided by AWS EKS
-    default_node_group = {
+    karpenter = {
+      ami_type       = "AL2023"
+      instance_types = ["<NODE_TYPE>"]
+
       desired_size = tonumber("<NODE_COUNT>") # tonumber() is used for a string token value
       min_size     = tonumber("<NODE_COUNT>") # tonumber() is used for a string token value
       max_size     = tonumber("<NODE_COUNT>") # tonumber() is used for a string token value
-      # By default, the module creates a launch template to ensure tags are propagated to instances, etc.,
-      # so we need to disable it to use the default template provided by the AWS EKS managed node group service
-      use_custom_launch_template = false
 
-      disk_size = 50
+      taints = {
+        # This Taint aims to keep just EKS Addons and Karpenter running on this MNG
+        # The pods that do not tolerate this taint should run on nodes created by Karpenter
+        addons = {
+          key    = "CriticalAddonsOnly"
+          value  = "true"
+          effect = "NO_SCHEDULE"
+        },
+      }
     }
   }
 
-  tags = local.tags
+  access_entries = {
+    kube_admin = {
+      principal_arn = "arn:aws:iam::<AWS_ACCOUNT_ID>:role/KubernetesAdmin"
+      type          = "STANDARD"
+      policy_associations = {
+        admin = {
+          policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+          access_scope = {
+            type = "cluster"
+          }
+        }
+      }
+    }
+
+    argocd = {
+      principal_arn = "arn:aws:iam::<AWS_ACCOUNT_ID>:role/argocd-<CLUSTER_NAME>"
+      type          = "STANDARD"
+      policy_associations = {
+        admin = {
+          policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+          access_scope = {
+            type = "cluster"
+          }
+        }
+      }
+    }
+
+    atlantis = {
+      principal_arn = "arn:aws:iam::<AWS_ACCOUNT_ID>:role/atlantis-<CLUSTER_NAME>"
+      type          = "STANDARD"
+      policy_associations = {
+        admin = {
+          policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+          access_scope = {
+            type = "cluster"
+          }
+        }
+      }
+    }
+  }
+
+  tags = merge(local.tags, {
+    "karpenter.sh/discovery" = local.name
+  })
 }
+
 
 ################################################################################
 # Supporting Resources
@@ -131,7 +152,7 @@ module "eks" {
 
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = "4.0.2"
+  version = "5.8.1"
 
   name = local.name
   cidr = local.vpc_cidr
@@ -344,6 +365,20 @@ resource "aws_iam_policy" "aws_ebs_csi_driver" {
   ]
 }
 EOT
+}
+
+module "karpenter" {
+  source  = "terraform-aws-modules/eks/aws//modules/karpenter"
+  version = "~> 20.0"
+
+  cluster_name = module.eks.cluster_name
+
+  # Attach additional IAM policies to the Karpenter node IAM role
+  node_iam_role_additional_policies = {
+    AmazonSSMManagedInstanceCore = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+  }
+
+  tags = local.tags
 }
 
 module "argo_workflows" {
