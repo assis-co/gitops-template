@@ -4,7 +4,7 @@ metadata:
   name: vault
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: '10'
+    argocd.argoproj.io/sync-wave: "10"
 spec:
   project: default
   source:
@@ -49,6 +49,9 @@ spec:
               - secretName: vault-tls
                 hosts:
                   - vault.<DOMAIN_NAME>
+          dataStorage:
+            size: 40Gi
+            storageClass: vultr-block-storage-hdd-retain
           ui:
             enabled: true
             serviceType: "ClusterIP"

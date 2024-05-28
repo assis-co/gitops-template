@@ -4,7 +4,7 @@ metadata:
   name: atlantis
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: '10'
+    argocd.argoproj.io/sync-wave: "10"
 spec:
   project: default
   source:
@@ -54,9 +54,9 @@ spec:
             apply_requirements: [mergeable]
         volumeClaim:
           enabled: true
-          dataStorage: 10Gi
+          dataStorage: 40Gi
   destination:
-    server: 'https://kubernetes.default.svc'
+    server: "https://kubernetes.default.svc"
     namespace: atlantis
   syncPolicy:
     automated:
