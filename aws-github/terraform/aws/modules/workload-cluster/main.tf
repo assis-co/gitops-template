@@ -76,7 +76,7 @@ module "eks" {
   eks_managed_node_groups = {
     # Default node group - as provided by AWS EKS
     karpenter = {
-      ami_type       = "AL2023"
+      ami_type       = "AL2023_x86_64_STANDARD"
       instance_types = [var.node_type]
 
       desired_size = tonumber(var.node_count) # tonumber() is used for a string token value
