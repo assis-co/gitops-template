@@ -101,7 +101,7 @@ module "eks" {
 
   access_entries = {
     kube_admin = {
-      principal_arn = "arn:aws:iam::<AWS_ACCOUNT_ID>:role/KubernetesAdmin"
+      principal_arn = aws_iam_role.kubernetes_admin.arn
       type          = "STANDARD"
       policy_associations = {
         admin = {
@@ -547,7 +547,7 @@ data "aws_iam_policy_document" "crossplane_custom_trust_policy" {
 
     principals {
       type        = "AWS"
-      identifiers = ["arn:aws:iam::<AWS_ACCOUNT_ID>:role/KubernetesAdmin"]
+      identifiers = [aws_iam_role.kubernetes_admin.arn]
     }
   }
   statement {
@@ -708,4 +708,22 @@ resource "aws_iam_policy" "vault_server" {
   ]
 }
 EOT
+}
+
+resource "aws_iam_role" "kubernetes_admin" {
+  name = "KubernetesAdmin"
+
+  # Just using for this example
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      },
+    ]
+  })
 }
