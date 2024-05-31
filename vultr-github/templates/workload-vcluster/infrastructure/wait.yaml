@@ -38,7 +38,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   annotations:
-    argocd.argoproj.io/sync-wave: '20'
+    argocd.argoproj.io/sync-wave: "20"
   name: kubernetes-toolkit-vcluster-api
   namespace: <WORKLOAD_CLUSTER_NAME>
 spec:
@@ -52,7 +52,7 @@ spec:
             - <WORKLOAD_CLUSTER_NAME>
             - --label
             - app=vcluster-api
-          image: public.ecr.aws/kubefirst/kubernetes-toolkit:0.0.8
+          image: public.ecr.aws/kubefirst/kubernetes-toolkit:0.1.3
           imagePullPolicy: IfNotPresent
           name: kubernetes-toolkit
       restartPolicy: OnFailure
@@ -62,7 +62,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   annotations:
-    argocd.argoproj.io/sync-wave: '20'
+    argocd.argoproj.io/sync-wave: "20"
   name: kubernetes-toolkit-vcluster-controller
   namespace: <WORKLOAD_CLUSTER_NAME>
 spec:
@@ -76,7 +76,7 @@ spec:
             - <WORKLOAD_CLUSTER_NAME>
             - --label
             - app=vcluster-controller
-          image: public.ecr.aws/kubefirst/kubernetes-toolkit:0.0.8
+          image: public.ecr.aws/kubefirst/kubernetes-toolkit:0.1.3
           imagePullPolicy: IfNotPresent
           name: kubernetes-toolkit
       restartPolicy: OnFailure
@@ -86,7 +86,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   annotations:
-    argocd.argoproj.io/sync-wave: '20'
+    argocd.argoproj.io/sync-wave: "20"
   name: kubernetes-toolkit-vcluster
   namespace: <WORKLOAD_CLUSTER_NAME>
 spec:
@@ -100,7 +100,7 @@ spec:
             - <WORKLOAD_CLUSTER_NAME>
             - --label
             - app=vcluster
-          image: public.ecr.aws/kubefirst/kubernetes-toolkit:0.0.8
+          image: public.ecr.aws/kubefirst/kubernetes-toolkit:0.1.3
           imagePullPolicy: IfNotPresent
           name: kubernetes-toolkit
       restartPolicy: OnFailure
@@ -110,7 +110,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   annotations:
-    argocd.argoproj.io/sync-wave: '20'
+    argocd.argoproj.io/sync-wave: "20"
   name: kubernetes-toolkit-vcluster-etcd
   namespace: <WORKLOAD_CLUSTER_NAME>
 spec:
@@ -124,7 +124,7 @@ spec:
             - <WORKLOAD_CLUSTER_NAME>
             - --label
             - app=vcluster-etcd
-          image: public.ecr.aws/kubefirst/kubernetes-toolkit:0.0.8
+          image: public.ecr.aws/kubefirst/kubernetes-toolkit:0.1.3
           imagePullPolicy: IfNotPresent
           name: kubernetes-toolkit
       restartPolicy: OnFailure

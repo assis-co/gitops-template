@@ -20,7 +20,7 @@ rules:
       - watch
       - list
   - apiGroups:
-      - ''
+      - ""
     resources:
       - secrets
     verbs:
@@ -44,7 +44,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   annotations:
-    argocd.argoproj.io/sync-wave: '20'
+    argocd.argoproj.io/sync-wave: "20"
   name: wait-vault-unseal
   namespace: vault
 spec:
@@ -54,7 +54,7 @@ spec:
         - args:
             - wait-for
             - vault-unseal
-          image: public.ecr.aws/kubefirst/kubernetes-toolkit:0.0.8
+          image: public.ecr.aws/kubefirst/kubernetes-toolkit:0.1.3
           imagePullPolicy: IfNotPresent
           name: wait
       restartPolicy: OnFailure
@@ -64,7 +64,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   annotations:
-    argocd.argoproj.io/sync-wave: '21'
+    argocd.argoproj.io/sync-wave: "21"
   name: wait-vault-init-complete
   namespace: vault
 spec:
@@ -74,7 +74,7 @@ spec:
         - args:
             - wait-for
             - vault-init-complete
-          image: public.ecr.aws/kubefirst/kubernetes-toolkit:0.0.8
+          image: public.ecr.aws/kubefirst/kubernetes-toolkit:0.1.3
           imagePullPolicy: IfNotPresent
           name: wait
           env:
