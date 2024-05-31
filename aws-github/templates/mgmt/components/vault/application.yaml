@@ -4,17 +4,17 @@ metadata:
   name: vault
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: '20'
+    argocd.argoproj.io/sync-wave: "20"
 spec:
   project: default
   source:
     repoURL: https://helm.releases.hashicorp.com
-    targetRevision: 0.22.0
+    targetRevision: 0.27.0
     helm:
       parameters:
         - name: server.route.host
           value: vault.<DOMAIN_NAME>
-        - name: 'server.ingress.hosts[0].host'
+        - name: "server.ingress.hosts[0].host"
           value: vault.<DOMAIN_NAME>
       values: |-
         server:
