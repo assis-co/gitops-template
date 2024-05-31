@@ -43,6 +43,10 @@ module "eks" {
   cluster_endpoint_public_access = true
   create_kms_key                 = false
   cluster_encryption_config      = {}
+  node_security_group_tags = {
+    "kubernetes.io/cluster/${local.name}" = null
+    "kubernetes.io/workload"              = "CriticalAddonsOnly"
+  }
   cluster_addons = {
     # AWS launch CoreDNS itself with their add-on https://docs.aws.amazon.com/eks/latest/userguide/managing-coredns.html
     coredns = {
@@ -79,13 +83,13 @@ module "eks" {
 
   eks_managed_node_groups = {
     # Default node group - as provided by AWS EKS
-    karpenter = {
+    criticalAddonsOnly = {
       ami_type       = "AL2023_x86_64_STANDARD"
-      instance_types = ["<NODE_TYPE>"]
+      instance_types = ["t4g.medium"] # ["<NODE_TYPE>"]
 
-      desired_size = tonumber("<NODE_COUNT>") # tonumber() is used for a string token value
-      min_size     = tonumber("<NODE_COUNT>") # tonumber() is used for a string token value
-      max_size     = tonumber("<NODE_COUNT>") # tonumber() is used for a string token value
+      desired_size = 3 # tonumber("<NODE_COUNT>") # tonumber() is used for a string token value
+      min_size     = 2 # tonumber("<NODE_COUNT>") # tonumber() is used for a string token value
+      max_size     = 4 # tonumber("<NODE_COUNT>") # tonumber() is used for a string token value
 
       taints = {
         # This Taint aims to keep just EKS Addons and Karpenter running on this MNG
@@ -99,10 +103,13 @@ module "eks" {
     }
   }
 
+  enable_cluster_creator_admin_permissions = true
+
   access_entries = {
     kube_admin = {
       principal_arn = aws_iam_role.kubernetes_admin.arn
       type          = "STANDARD"
+
       policy_associations = {
         admin = {
           policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
@@ -365,20 +372,6 @@ resource "aws_iam_policy" "aws_ebs_csi_driver" {
   ]
 }
 EOT
-}
-
-module "karpenter" {
-  source  = "terraform-aws-modules/eks/aws//modules/karpenter"
-  version = "~> 20.0"
-
-  cluster_name  = module.eks.cluster_name
-  iam_role_name = "karpenter-${local.name}"
-  # Attach additional IAM policies to the Karpenter node IAM role
-  node_iam_role_additional_policies = {
-    AmazonSSMManagedInstanceCore = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
-  }
-
-  tags = local.tags
 }
 
 module "argo_workflows" {
