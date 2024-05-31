@@ -9,7 +9,7 @@ spec:
   project: default
   source:
     repoURL: https://chartmuseum.github.io/charts
-    targetRevision: 3.9.3
+    targetRevision: 3.10.2
     helm:
       values: |-
         serviceAccount:
@@ -45,7 +45,7 @@ spec:
               tlsSecret: chartmuseum-tls
           ingressClassName: nginx
     chart: chartmuseum
-  destination: 
+  destination:
     server: https://kubernetes.default.svc
     namespace: chartmuseum
   syncPolicy:
