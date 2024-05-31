@@ -4,7 +4,7 @@ metadata:
   name: external-dns
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: '10'
+    argocd.argoproj.io/sync-wave: "10"
 spec:
   project: default
   source:
@@ -15,7 +15,7 @@ spec:
       values: |
         image:
           repository: registry.k8s.io/external-dns/external-dns
-          tag: "v0.13.2"
+          tag: "v0.14.2"
         serviceAccount:
           create: true
           name: external-dns
