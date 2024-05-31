@@ -4,12 +4,12 @@ metadata:
   name: <WORKLOAD_CLUSTER_NAME>-reloader
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: '30'
+    argocd.argoproj.io/sync-wave: "30"
 spec:
   project: <WORKLOAD_CLUSTER_NAME>
   source:
-    repoURL: 'https://stakater.github.io/stakater-charts'
-    targetRevision: v1.0.10
+    repoURL: "https://stakater.github.io/stakater-charts"
+    targetRevision: v1.0.101
     chart: reloader
     helm:
       values: |-

@@ -2,7 +2,7 @@ data "aws_caller_identity" "current" {}
 data "aws_availability_zones" "available" {}
 
 locals {
-  cluster_version = "1.30"
+  cluster_version = "1.29"
   vpc_cidr        = "10.0.0.0/16"
   azs             = slice(data.aws_availability_zones.available.names, 0, 3)
   tags = {
@@ -13,20 +13,6 @@ locals {
 ################################################################################
 # EKS Module
 ################################################################################
-module "iam_node_group_role" {
-  source = "terraform-aws-modules/iam/aws//modules/iam-assumable-role"
-
-  create_role = true
-
-  role_name_prefix = "${var.cluster_name}-node-group"
-
-  custom_role_policy_arns = [
-    "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly",
-    "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy",
-    "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy",
-  ]
-  number_of_custom_role_policy_arns = 3
-}
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
@@ -37,8 +23,10 @@ module "eks" {
   cluster_endpoint_public_access = true
   create_kms_key                 = false
   cluster_encryption_config      = {}
-  create_iam_role                = false
-  iam_role_arn                   = module.iam_node_group_role.iam_role_arn
+  node_security_group_tags = {
+    "kubernetes.io/cluster/${var.cluster_name}" = null
+    "kubernetes.io/workload"                    = "CriticalAddonsOnly"
+  }
   cluster_addons = {
     # AWS launch CoreDNS itself with their add-on https://docs.aws.amazon.com/eks/latest/userguide/managing-coredns.html
     coredns = {
@@ -75,13 +63,13 @@ module "eks" {
 
   eks_managed_node_groups = {
     # Default node group - as provided by AWS EKS
-    karpenter = {
+    criticalAddonsOnly = {
       ami_type       = "AL2023_x86_64_STANDARD"
-      instance_types = [var.node_type]
+      instance_types = ["t4g.medium"] # ["<NODE_TYPE>"]
 
-      desired_size = tonumber(var.node_count) # tonumber() is used for a string token value
-      min_size     = tonumber(var.node_count) # tonumber() is used for a string token value
-      max_size     = tonumber(var.node_count) # tonumber() is used for a string token value
+      desired_size = 3 # tonumber("<NODE_COUNT>") # tonumber() is used for a string token value
+      min_size     = 2 # tonumber("<NODE_COUNT>") # tonumber() is used for a string token value
+      max_size     = 4 # tonumber("<NODE_COUNT>") # tonumber() is used for a string token value
 
       taints = {
         # This Taint aims to keep just EKS Addons and Karpenter running on this MNG
@@ -91,6 +79,50 @@ module "eks" {
           value  = "true"
           effect = "NO_SCHEDULE"
         },
+      }
+    }
+  }
+
+  enable_cluster_creator_admin_permissions = true
+
+  access_entries = {
+    kube_admin = {
+      principal_arn = aws_iam_role.kubernetes_admin.arn
+      type          = "STANDARD"
+
+      policy_associations = {
+        admin = {
+          policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+          access_scope = {
+            type = "cluster"
+          }
+        }
+      }
+    }
+
+    argocd = {
+      principal_arn = "arn:aws:iam::<AWS_ACCOUNT_ID>:role/argocd-<CLUSTER_NAME>"
+      type          = "STANDARD"
+      policy_associations = {
+        admin = {
+          policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+          access_scope = {
+            type = "cluster"
+          }
+        }
+      }
+    }
+
+    atlantis = {
+      principal_arn = "arn:aws:iam::<AWS_ACCOUNT_ID>:role/atlantis-<CLUSTER_NAME>"
+      type          = "STANDARD"
+      policy_associations = {
+        admin = {
+          policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+          access_scope = {
+            type = "cluster"
+          }
+        }
       }
     }
   }
@@ -133,6 +165,7 @@ module "vpc" {
 
   private_subnet_tags = {
     "kubernetes.io/role/internal-elb" = 1
+    "karpenter.sh/discovery"          = var.cluster_name
   }
 
   tags = local.tags

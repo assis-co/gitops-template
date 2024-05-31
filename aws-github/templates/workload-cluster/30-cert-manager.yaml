@@ -6,12 +6,12 @@ metadata:
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   annotations:
-    argocd.argoproj.io/sync-wave: '30'
+    argocd.argoproj.io/sync-wave: "30"
 spec:
   project: <WORKLOAD_CLUSTER_NAME>
   source:
     repoURL: https://charts.jetstack.io
-    targetRevision: v1.14.4
+    targetRevision: v1.14.5
     helm:
       values: |-
         serviceAccount:
