@@ -64,7 +64,7 @@ module "eks" {
   eks_managed_node_groups = {
     # Default node group - as provided by AWS EKS
     criticalAddonsOnly = {
-      ami_type       = "AL2023_x86_64_STANDARD"
+      ami_type       = "AL2023_ARM_64_STANDARD"
       instance_types = ["t4g.medium"] # ["<NODE_TYPE>"]
 
       desired_size = 3 # tonumber("<NODE_COUNT>") # tonumber() is used for a string token value
