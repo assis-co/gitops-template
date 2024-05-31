@@ -4,18 +4,18 @@ metadata:
   name: reloader
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: '10'
+    argocd.argoproj.io/sync-wave: "10"
 spec:
   project: default
   source:
-    repoURL: 'https://stakater.github.io/stakater-charts'
-    targetRevision: v1.0.10
+    repoURL: "https://stakater.github.io/stakater-charts"
+    targetRevision: v1.0.101
     chart: reloader
     helm:
       values: |-
         ignoreSecrets: false
   destination:
-    server: 'https://kubernetes.default.svc'
+    server: "https://kubernetes.default.svc"
     namespace: reloader
   syncPolicy:
     automated:
